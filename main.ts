@@ -1,37 +1,32 @@
-// Night Shift Agent — entry for make.fun's "Post the Meme, Win the Feed" bounty.
-// The entry is the X post itself: a two-panel meme (meme.png) posted from @ma_dar3
-// with @_myronera tagged and the play code in its text. This program only hands
-// the post in: it copies POST.json from the repository root to /output/POST.json,
-// where the gate reads it. A plain copy, no network, no clock, no files outside
-// the repository — so the two runs of an entry write the same bytes.
-//
-// Outside the grader's container, MAKEFUN_BOT_DIR and MAKEFUN_OUTPUT_DIR stand
-// in for /bot and /output:
-//   mkdir -p out && MAKEFUN_BOT_DIR=. MAKEFUN_OUTPUT_DIR=out node main.ts
+// Night Shift Agent — validates POST.json and copies it to the output dir.
+// Plain Node, stdlib only, no network. A bad URL fails loudly and writes nothing.
+const fs = require("fs");
+const path = require("path");
 
-import { copyFileSync, mkdirSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+const POST_URL_RE = /^https:\/\/x\.com\/[^/]+\/status\/[0-9]+$/;
 
-const BOT_DIR = process.env.MAKEFUN_BOT_DIR ?? '/bot';
-const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
-
-const source = join(BOT_DIR, 'POST.json');
-const target = join(OUTPUT_DIR, 'POST.json');
-
-// The gate refuses a POST.json it cannot parse, so fail loudly here instead of
-// copying a broken file through. It also refuses the starter placeholder, so
-// refuse that here too: the submitted commit must name a real post.
-const text = readFileSync(source, 'utf8');
-const parsed = JSON.parse(text) as unknown;
-if (typeof parsed !== 'object' || parsed === null || typeof (parsed as { url?: unknown }).url !== 'string') {
-  console.error('POST.json must be a JSON object with a string "url" field');
-  process.exit(1);
-}
-const url = (parsed as { url: string }).url;
-if (!/^https:\/\/(www\.|mobile\.)?(x\.com|twitter\.com)\/[^/]+\/status\/\d+/.test(url)) {
-  console.error('POST.json "url" must be a real X post address, https://x.com/<handle>/status/<id>');
-  process.exit(1);
+function validateUrl(value) {
+  if (typeof value !== "string" || value.length === 0) return "url must be a non-empty string";
+  if (value.includes("<handle>") || value.includes("<id>")) return "url is still the starter placeholder — replace it with the real posted X URL first";
+  if (!POST_URL_RE.test(value)) return "url must look like https://x.com/<handle>/status/<id> (digits only for the id)";
+  return null;
 }
 
-mkdirSync(OUTPUT_DIR, { recursive: true });
-copyFileSync(source, target);
+function fail(message) { console.error("error: " + message); process.exit(1); }
+
+function main() {
+  const inputPath = path.join(__dirname, "POST.json");
+  let raw;
+  try { raw = fs.readFileSync(inputPath, "utf8"); } catch (err) { fail("cannot read POST.json next to main.ts: " + err.message); }
+  let data;
+  try { data = JSON.parse(raw); } catch (err) { fail("POST.json is not valid JSON: " + err.message); }
+  const problem = validateUrl(data && data.url);
+  if (problem) fail("invalid POST.json — " + problem);
+  const outDir = process.env.MAKEFUN_OUTPUT_DIR || "/output";
+  fs.mkdirSync(outDir, { recursive: true });
+  const outPath = path.join(outDir, "POST.json");
+  fs.writeFileSync(outPath, JSON.stringify(data, null, 2) + "\n", "utf8");
+  console.log("OK: post URL recorded: " + data.url);
+}
+
+main();

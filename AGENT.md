@@ -1,34 +1,41 @@
-# Night Shift Agent — entry notes
+# Night Shift Agent — agent notes
 
-## The meme
-Two-panel image (`meme.png`, 1200x1200, real PNG). Same orange cat in a black
-hoodie and headphones in both panels — the Hanszy mascot look.
+## What this entry is
 
-- Top: cat asleep in bed, moonlight. Text: "ME, ASLEEP AT 3 AM"
-- Bottom: cat at a laptop at 3 AM, paws typing, coffee beside it.
-  Text: "MY AI AGENT, ENTERING ITS 37TH BOUNTY OF THE NIGHT"
-- Strip: "make.fun — where agents build, enter & get paid"
+A two-panel meme, 1200x1200, built for make.fun's "Post the Meme, Win the
+Feed" bounty. It stars an orange cat. The top panel shows the cat fast
+asleep, captioned "ME, ASLEEP AT 3 AM". The bottom panel shows the same
+cat wide awake at a laptop, captioned "MY AI AGENT, ENTERING ITS 37TH
+BOUNTY OF THE NIGHT". A navy strip along the bottom reads "make.fun —
+where agents build, enter & get paid".
 
-Made in the build session: the two panels were generated with the image
-generator (no text in the prompts), then composited with `composite_meme.py`
-(PIL: center-crop, bold white text with black outline, navy strip). The final
-PNG was inspected and the strip font was shrunk once after the first render
-overflowed the edges.
+## The meme file
 
-## The post (Bro posts this from @ma_dar3)
-Attach `meme.png` natively to the post. Post text, exactly:
+The finished image is `meme.png` in the repo root — done, do not
+regenerate or edit it. It is the only image this entry needs.
 
-    me, asleep at 3am. my agent, entering its 37th bounty of the night 😼
-    make.fun — where agents build, enter & get paid
-    @_myronera makefun-glove-bagel-angler
+## Posting (Bro does this, from @ma_dar3)
 
-- `@_myronera` as a whole word, play code `makefun-glove-bagel-angler` verbatim.
-- Post between the bounty opening (24 Nov 2026 13:15 UTC) and the deadline
-  (26 Nov 2026 09:20 UTC / 16:20 WIB), from the public @ma_dar3 account.
-- Keep the post up and the account public until results are out (10 Dec 2026).
-- No bought/botted engagement, no pods — organic only.
+Attach `meme.png` natively (not as a link) with this text:
 
-## After the post is up
-Write its address into `POST.json` as
-`{"url": "https://x.com/ma_dar3/status/<id>"}`, commit, then submit.
-Score = likes + reposts + quotes at the deadline reading; top 15 share $2.
+> me, asleep at 3am. my agent, entering its 37th bounty of the night
+> make.fun — where agents build, enter & get paid
+> @_myronera makefun-glove-bagel-angler
+
+Play code: `makefun-glove-bagel-angler`. Referral code: `mgwpv082`.
+
+## How main.ts works
+
+`main.ts` (plain Node, stdlib only, no network) reads `POST.json` and
+checks its `url` against the pattern for a real X status link. A
+placeholder, bad JSON, or wrong shape fails with a clear stderr message
+and a non-zero exit, writing nothing — while `POST.json` still holds the
+starter placeholder, `node main.ts` must fail, and that is expected.
+A valid URL is copied to `$MAKEFUN_OUTPUT_DIR/POST.json` (default
+`/output`), creating the output directory if needed. Run `node main.ts`.
+
+## Submit flow
+
+1. Bro posts the meme from @ma_dar3 first.
+2. Update `POST.json` with the real post URL, commit, push to origin master.
+3. Then bundle, check, and submit — the coordinator handles those steps.
